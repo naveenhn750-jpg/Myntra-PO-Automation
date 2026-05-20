@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Myntra PO Processor</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script>
+    if (!window.XLSX) {
+      document.write('<script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"><\/script>');
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --panel: #fffdf8;
+      --ink: #1c2730;
+      --muted: #65727e;
+      --line: #d5cbbd;
+      --accent: #0f766e;
+      --accent-2: #c96f3b;
+      --soft: #e8f3ef;
+      --warn: #fef3c7;
+      --issue: #f9d5d0;
+      --good: #dcedc8;
+      --shadow: 0 20px 60px rgba(39, 31, 22, 0.12);
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(201, 111, 59, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 25%),
+        linear-gradient(180deg, #fbf7ef 0%, #f3ede1 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto 48px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(255, 253, 248, 0.98), rgba(250, 244, 232, 0.98));
+      border: 1px solid rgba(213, 203, 189, 0.8);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(15, 118, 110, 0.12), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1.02;
+      max-width: 760px;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 780px;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(213, 203, 189, 0.9);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 8px 30px rgba(39, 31, 22, 0.06);
+    }
+
+    .panel h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+    }
+
+    .panel p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .uploader {
+      border: 1.5px dashed var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(180deg, #fff 0%, #fdf8ef 100%);
+      margin-bottom: 16px;
+    }
+
+    .uploader strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .uploader span {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(15, 118, 110, 0.18);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--accent), #128779);
+      color: #fff;
+    }
+
+    .ghost {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .stat {
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #faf5eb 100%);
+      border: 1px solid rgba(213, 203, 189, 0.85);
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat .value {
+      margin-top: 8px;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .notes {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #f8f3e7;
+      border: 1px solid rgba(213, 203, 189, 0.85);
+    }
+
+    .notes h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+
+    .notes ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    .status {
+      margin-top: 18px;
+      min-height: 50px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #f8f4ec;
+      border: 1px solid rgba(213, 203, 189, 0.9);
+      color: var(--muted);
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .status.ok {
+      background: #eff9ef;
+      border-color: #bfdabf;
+      color: #275533;
+    }
+
+    .status.warn {
+      background: #fff7e5;
+      border-color: #ecd9a3;
+      color: #7d5c16;
+    }
+
+    .status.error {
+      background: #fff1ef;
+      border-color: #efc0b9;
+      color: #842029;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .footer code {
+      font-family: Consolas, monospace;
+      background: rgba(28, 39, 48, 0.05);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        width: min(100% - 20px, 100%);
+        margin: 16px auto 28px;
+      }
+
+      .hero,
+      .panel {
+        padding: 18px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">Myntra PO Workflow</div>
+      <h1>Upload master + PO files, then download the final mapped workbook.</h1>
+      <p>
+        This tool combines all uploaded PO files, adds the PO-wise Ship To location, maps values from the master file,
+        checks HSN, EAN, and NLC with GST, ignores NLC differences within -1 to +1, and generates a downloadable Excel file
+        for your team.
+      </p>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Upload Files</h2>
+        <p>Use the same inputs you used in the manual process: one master file and all relevant PO workbooks.</p>
+
+        <div class="uploader">
+          <strong>Master file</strong>
+          <span>Upload the Myntra master workbook that contains columns like <code>Myntra SKU</code>, <code>SKU</code>, <code>EAN</code>, <code>HSN</code>, and <code>NLC with GST</code>.</span>
+          <input id="masterFile" type="file" accept=".xlsx,.xls" />
+        </div>
+
+        <div class="uploader">
+          <strong>PO files</strong>
+          <span>Upload one or more PO workbooks. The tool reads <code>PO Barcode</code>, <code>Ship To</code>, and the item table automatically.</span>
+          <input id="poFiles" type="file" accept=".xlsx,.xls" multiple />
+        </div>
+
+        <div class="actions">
+          <button id="processBtn" class="primary">Generate Final Excel</button>
+          <button id="resetBtn" class="ghost" type="button">Reset</button>
+        </div>
+
+        <div id="statusBox" class="status">Waiting for files.</div>
+
+        <div class="footer">
+          This page runs fully in the browser. If the spreadsheet library does not load, refresh once with internet access so the CDN script can load.
+        </div>
+      </section>
+
+      <aside class="panel">
+        <h2>What It Does</h2>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">PO Processing</div>
+            <div class="value">Combine</div>
+          </div>
+          <div class="stat">
+            <div class="label">Ship To</div>
+            <div class="value">PO-wise</div>
+          </div>
+          <div class="stat">
+            <div class="label">Master Mapping</div>
+            <div class="value">Auto</div>
+          </div>
+          <div class="stat">
+            <div class="label">Excel Export</div>
+            <div class="value">Ready</div>
+          </div>
+        </div>
+
+        <div class="notes">
+          <h3>Rules Included</h3>
+          <ul>
+            <li>Maps <code>SKU Code</code> from PO output to <code>Myntra SKU</code> in the master.</li>
+            <li>Adds <code>Our SKU</code>, <code>Our HSN</code>, <code>Our EAN</code>, and <code>Our NLC with GST</code>.</li>
+            <li>Raises remarks for HSN or EAN mismatch.</li>
+            <li>Raises NLC issue only when the difference is greater than <code>1</code>.</li>
+            <li>Adds a hidden master lookup sheet and a check summary sheet in the output workbook.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const MASTER_HEADERS = ["SKU", "Myntra SKU", "EAN", "HSN", "NLC with GST"];
+    const FINAL_HEADERS = [
+      "PO number",
+      "Ship To",
+      "SKU Id",
+      "Style Id",
+      "SKU Code",
+      "Our SKU",
+      "HSN Code",
+      "Our HSN",
+      "Brand",
+      "GTIN",
+      "Our EAN",
+      "Vendor Article Number",
+      "Vendor Article Name",
+      "Size",
+      "Colour",
+      "Mrp",
+      "Credit Period",
+      "Margin Type",
+      "Agreed Margin",
+      "Gross Margin",
+      "Quantity",
+      "FOB Amount",
+      "List price(FOB+Transport-Excise)",
+      "Landing Price",
+      "Our NLC with GST",
+      "Estimated Delivery Date",
+      "Buying Tax CGST",
+      "Buying Tax CGST Amount",
+      "Buying Tax SGST",
+      "Buying Tax SGST Amount",
+      "Selling Tax CGST",
+      "Selling Tax CGST Amount",
+      "Selling Tax IGST",
+      "Selling Tax IGST Amount",
+      "Selling Tax SGST",
+      "Selling Tax SGST Amount",
+      "Remark"
+    ];
+
+    const STYLES = {
+      header: {
+        font: { bold: true, color: { rgb: "1C2730" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "E8F3EF" } }
+      },
+      sourceCompareHeader: {
+        font: { bold: true, color: { rgb: "1C2730" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "FFE699" } }
+      },
+      mappedCompareHeader: {
+        font: { bold: true, color: { rgb: "1C2730" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "A9D18E" } }
+      },
+      cell: {
+        alignment: { vertical: "top", wrapText: false },
+        border: borderStyle()
+      },
+      wrapCell: {
+        alignment: { vertical: "top", wrapText: true },
+        border: borderStyle()
+      },
+      issue: {
+        alignment: { vertical: "top", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "F4CCCC" } }
+      },
+      note: {
+        alignment: { vertical: "top", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "FCE5CD" } }
+      },
+      good: {
+        alignment: { vertical: "top", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "D9EAD3" } }
+      },
+      missing: {
+        alignment: { vertical: "top", wrapText: true },
+        border: borderStyle(),
+        fill: { patternType: "solid", fgColor: { rgb: "FCE5CD" } }
+      }
+    };
+
+    const processBtn = document.getElementById("processBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const masterInput = document.getElementById("masterFile");
+    const poInput = document.getElementById("poFiles");
+    const statusBox = document.getElementById("statusBox");
+
+    processBtn.addEventListener("click", processFiles);
+    resetBtn.addEventListener("click", resetForm);
+
+    function borderStyle() {
+      return {
+        top: { style: "thin", color: { rgb: "D5CBBD" } },
+        bottom: { style: "thin", color: { rgb: "D5CBBD" } },
+        left: { style: "thin", color: { rgb: "D5CBBD" } },
+        right: { style: "thin", color: { rgb: "D5CBBD" } }
+      };
+    }
+
+    function setStatus(message, tone = "") {
+      statusBox.className = `status ${tone}`.trim();
+      statusBox.textContent = message;
+    }
+
+    function resetForm() {
+      masterInput.value = "";
+      poInput.value = "";
+      setStatus("Waiting for files.");
+    }
+
+    async function processFiles() {
+      if (!window.XLSX) {
+        setStatus("Spreadsheet library did not load. Refresh the page once with internet access and try again.", "error");
+        return;
+      }
+
+      const masterFile = masterInput.files[0];
+      const poFiles = Array.from(poInput.files || []);
+
+      if (!masterFile) {
+        setStatus("Upload the master file first.", "warn");
+        return;
+      }
+
+      if (!poFiles.length) {
+        setStatus("Upload at least one PO file.", "warn");
+        return;
+      }
+
+      processBtn.disabled = true;
+      setStatus(`Reading ${poFiles.length} PO file(s) and the master workbook...`);
+
+      try {
+        const masterWorkbook = await readWorkbook(masterFile);
+        const masterSheetName = masterWorkbook.SheetNames[0];
+        const masterRows = XLSX.utils.sheet_to_json(masterWorkbook.Sheets[masterSheetName], {
+          header: 1,
+          defval: "",
+          raw: true
+        });
+
+        const masterParsed = parseMaster(masterRows);
+        const poOutputs = [];
+        const shipToMap = new Map();
+
+        for (const file of poFiles) {
+          const workbook = await readWorkbook(file);
+          const poData = parsePoWorkbook(workbook, file.name);
+          shipToMap.set(poData.poNumber, poData.shipTo || "");
+          poOutputs.push(...poData.items);
+        }
+
+        setStatus(`Parsed ${poOutputs.length} output rows. Building mapped workbook...`);
+
+        const { combinedRows, summaryRows } = buildFinalRows(poOutputs, masterParsed.lookup, shipToMap);
+        const workbook = buildOutputWorkbook(combinedRows, masterRows, summaryRows);
+        const filename = `myntra_po_output_${timestampForFile()}.xlsx`;
+
+        XLSX.writeFile(workbook, filename, { compression: true });
+
+        const lastSummary = summaryRows.slice(1).map(([key, value]) => `${key}: ${value}`).join("\n");
+        setStatus(`Done. Final file downloaded as ${filename}.\n\n${lastSummary}`, "ok");
+      } catch (error) {
+        setStatus(`Could not generate the file.\n\n${error.message}`, "error");
+      } finally {
+        processBtn.disabled = false;
+      }
+    }
+
+    async function readWorkbook(file) {
+      const buffer = await file.arrayBuffer();
+      return XLSX.read(buffer, { type: "array", cellDates: false, raw: true });
+    }
+
+    function parseMaster(rows) {
+      const headerRowIndex = rows.findIndex((row) => row.includes("Myntra SKU") && row.includes("NLC with GST"));
+      if (headerRowIndex === -1) {
+        throw new Error("Master file header row was not found.");
+      }
+
+      const headerRow = rows[headerRowIndex].map((value) => normalizeText(value));
+      const headerIndex = makeHeaderIndex(headerRow);
+
+      for (const key of MASTER_HEADERS) {
+        if (headerIndex[key] == null) {
+          throw new Error(`Master file is missing required column: ${key}`);
+        }
+      }
+
+      const lookup = new Map();
+      for (let i = headerRowIndex + 1; i < rows.length; i += 1) {
+        const row = rows[i] || [];
+        const myntraSku = normalizeText(row[headerIndex["Myntra SKU"]]);
+        if (!myntraSku) {
+          continue;
+        }
+
+        lookup.set(myntraSku, {
+          sku: row[headerIndex["SKU"]] ?? "",
+          ean: row[headerIndex["EAN"]] ?? "",
+          hsn: row[headerIndex["HSN"]] ?? "",
+          nlcWithGst: row[headerIndex["NLC with GST"]] ?? ""
+        });
+      }
+
+      return { headerRowIndex, headerIndex, lookup };
+    }
+
+    function parsePoWorkbook(workbook, filename) {
+      const sheetName = workbook.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+        header: 1,
+        defval: "",
+        raw: true
+      });
+
+      let poNumber = "";
+      let shipTo = "";
+      let headerRowIndex = -1;
+
+      for (let i = 0; i < rows.length; i += 1) {
+        const row = rows[i];
+        if (!poNumber && normalizeText(row[0]) === "PO Barcode") {
+          poNumber = normalizeText(row[1]);
+        }
+        if (!shipTo && normalizeText(row[3]) === "Ship To") {
+          shipTo = normalizeText(row[4]);
+        }
+        if (normalizeText(row[0]) === "SKU Id" && row.includes("Style Id")) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (!poNumber) {
+        throw new Error(`PO Barcode not found in ${filename}`);
+      }
+      if (headerRowIndex === -1) {
+        throw new Error(`Item header row not found in ${filename}`);
+      }
+
+      const headerRow = rows[headerRowIndex].map((value) => normalizeText(value));
+      const headerIndex = makeHeaderIndex(headerRow);
+
+      const required = ["SKU Id", "Style Id", "SKU Code", "HSN Code", "Brand", "GTIN"];
+      for (const key of required) {
+        if (headerIndex[key] == null) {
+          throw new Error(`${filename} is missing required PO column: ${key}`);
+        }
+      }
+
+      const items = [];
+      for (let i = headerRowIndex + 1; i < rows.length; i += 1) {
+        const row = rows[i] || [];
+        const skuId = row[headerIndex["SKU Id"]];
+        if (!hasUsefulValue(skuId)) {
+          continue;
+        }
+
+        items.push({
+          "PO number": poNumber,
+          "Ship To": shipTo,
+          "SKU Id": valueOrBlank(row, headerIndex, "SKU Id"),
+          "Style Id": valueOrBlank(row, headerIndex, "Style Id"),
+          "SKU Code": valueOrBlank(row, headerIndex, "SKU Code"),
+          "HSN Code": valueOrBlank(row, headerIndex, "HSN Code"),
+          "Brand": valueOrBlank(row, headerIndex, "Brand"),
+          "GTIN": valueOrBlank(row, headerIndex, "GTIN"),
+          "Vendor Article Number": valueOrBlank(row, headerIndex, "Vendor Article Number"),
+          "Vendor Article Name": valueOrBlank(row, headerIndex, "Vendor Article Name"),
+          "Size": valueOrBlank(row, headerIndex, "Size"),
+          "Colour": valueOrBlank(row, headerIndex, "Colour"),
+          "Mrp": valueOrBlank(row, headerIndex, "Mrp"),
+          "Credit Period": valueOrBlank(row, headerIndex, "Credit Period"),
+          "Margin Type": valueOrBlank(row, headerIndex, "Margin Type"),
+          "Agreed Margin": valueOrBlank(row, headerIndex, "Agreed Margin"),
+          "Gross Margin": valueOrBlank(row, headerIndex, "Gross Margin"),
+          "Quantity": valueOrBlank(row, headerIndex, "Quantity"),
+          "FOB Amount": valueOrBlank(row, headerIndex, "FOB Amount"),
+          "List price(FOB+Transport-Excise)": valueOrBlank(row, headerIndex, "List price(FOB+Transport-Excise)"),
+          "Landing Price": valueOrBlank(row, headerIndex, "Landing Price"),
+          "Estimated Delivery Date": valueOrBlank(row, headerIndex, "Estimated Delivery Date"),
+          "Buying Tax CGST": valueOrBlank(row, headerIndex, "Buying Tax CGST"),
+          "Buying Tax CGST Amount": valueOrBlank(row, headerIndex, "Buying Tax CGST Amount"),
+          "Buying Tax SGST": valueOrBlank(row, headerIndex, "Buying Tax SGST"),
+          "Buying Tax SGST Amount": valueOrBlank(row, headerIndex, "Buying Tax SGST Amount"),
+          "Selling Tax CGST": valueOrBlank(row, headerIndex, "Selling Tax CGST"),
+          "Selling Tax CGST Amount": valueOrBlank(row, headerIndex, "Selling Tax CGST Amount"),
+          "Selling Tax IGST": valueOrBlank(row, headerIndex, "Selling Tax IGST"),
+          "Selling Tax IGST Amount": valueOrBlank(row, headerIndex, "Selling Tax IGST Amount"),
+          "Selling Tax SGST": valueOrBlank(row, headerIndex, "Selling Tax SGST"),
+          "Selling Tax SGST Amount": valueOrBlank(row, headerIndex, "Selling Tax SGST Amount")
+        });
+      }
+
+      return { poNumber, shipTo, items };
+    }
+
+    function buildFinalRows(poRows, masterLookup, shipToMap) {
+      const stats = {
+        totalRows: poRows.length,
+        foundInMaster: 0,
+        missingInMaster: 0,
+        eanMismatch: 0,
+        hsnMismatch: 0,
+        nlcMismatch: 0,
+        nlcWithinTolerance: 0,
+        fullyMatched: 0,
+        missingShipTo: 0
+      };
+
+      const combinedRows = poRows.map((row) => {
+        const skuCode = normalizeText(row["SKU Code"]);
+        const masterRow = masterLookup.get(skuCode);
+        const shipTo = normalizeText(row["Ship To"]) || shipToMap.get(normalizeText(row["PO number"])) || "";
+        const issues = [];
+
+        if (!shipTo) {
+          stats.missingShipTo += 1;
+        }
+
+        const output = {
+          "PO number": row["PO number"],
+          "Ship To": shipTo,
+          "SKU Id": row["SKU Id"],
+          "Style Id": row["Style Id"],
+          "SKU Code": row["SKU Code"],
+          "Our SKU": "",
+          "HSN Code": row["HSN Code"],
+          "Our HSN": "",
+          "Brand": row["Brand"],
+          "GTIN": row["GTIN"],
+          "Our EAN": "",
+          "Vendor Article Number": row["Vendor Article Number"],
+          "Vendor Article Name": row["Vendor Article Name"],
+          "Size": row["Size"],
+          "Colour": row["Colour"],
+          "Mrp": row["Mrp"],
+          "Credit Period": row["Credit Period"],
+          "Margin Type": row["Margin Type"],
+          "Agreed Margin": row["Agreed Margin"],
+          "Gross Margin": row["Gross Margin"],
+          "Quantity": row["Quantity"],
+          "FOB Amount": row["FOB Amount"],
+          "List price(FOB+Transport-Excise)": row["List price(FOB+Transport-Excise)"],
+          "Landing Price": row["Landing Price"],
+          "Our NLC with GST": "",
+          "Estimated Delivery Date": row["Estimated Delivery Date"],
+          "Buying Tax CGST": row["Buying Tax CGST"],
+          "Buying Tax CGST Amount": row["Buying Tax CGST Amount"],
+          "Buying Tax SGST": row["Buying Tax SGST"],
+          "Buying Tax SGST Amount": row["Buying Tax SGST Amount"],
+          "Selling Tax CGST": row["Selling Tax CGST"],
+          "Selling Tax CGST Amount": row["Selling Tax CGST Amount"],
+          "Selling Tax IGST": row["Selling Tax IGST"],
+          "Selling Tax IGST Amount": row["Selling Tax IGST Amount"],
+          "Selling Tax SGST": row["Selling Tax SGST"],
+          "Selling Tax SGST Amount": row["Selling Tax SGST Amount"],
+          "Remark": ""
+        };
+
+        if (!masterRow) {
+          stats.missingInMaster += 1;
+          output["Remark"] = "Raise request: SKU Code not found in master";
+          output.__issueColumns = new Set(["SKU Code", "Our SKU", "Our HSN", "Our EAN", "Our NLC with GST", "Remark"]);
+          output.__missingColumns = new Set(["SKU Code", "Our SKU", "Our HSN", "Our EAN", "Our NLC with GST"]);
+          return output;
+        }
+
+        stats.foundInMaster += 1;
+
+        output["Our SKU"] = masterRow.sku ?? "";
+        output["Our HSN"] = masterRow.hsn ?? "";
+        output["Our EAN"] = masterRow.ean ?? "";
+        output["Our NLC with GST"] = masterRow.nlcWithGst ?? "";
+
+        const poHsn = normalizeNumericText(row["HSN Code"]);
+        const masterHsn = normalizeNumericText(masterRow.hsn);
+        if (poHsn !== masterHsn) {
+          issues.push(`Raise request: HSN mismatch (${displayValue(poHsn)} vs ${displayValue(masterHsn)})`);
+          stats.hsnMismatch += 1;
+        }
+
+        const poEan = normalizeCompareDigits(row["GTIN"]);
+        const masterEan = normalizeCompareDigits(masterRow.ean);
+        if (poEan !== masterEan) {
+          issues.push(`Raise request: EAN mismatch (${displayValue(poEan)} vs ${displayValue(masterEan)})`);
+          stats.eanMismatch += 1;
+        }
+
+        const poNlc = normalizeNumber(row["Landing Price"]);
+        const masterNlc = normalizeNumber(masterRow.nlcWithGst);
+        if (poNlc == null || masterNlc == null) {
+          if (poNlc !== masterNlc) {
+            issues.push(`Raise request: NLC with GST mismatch (${displayValue(poNlc)} vs ${displayValue(masterNlc)})`);
+            stats.nlcMismatch += 1;
+          }
+        } else if (Math.abs(poNlc - masterNlc) > 1) {
+          issues.push(`Raise request: NLC with GST mismatch (${displayValue(poNlc)} vs ${displayValue(masterNlc)})`);
+          stats.nlcMismatch += 1;
+        } else {
+          stats.nlcWithinTolerance += 1;
+        }
+
+        if (!issues.length) {
+          stats.fullyMatched += 1;
+          output["Remark"] = "Matched";
+          output.__goodRemark = true;
+        } else {
+          output["Remark"] = issues.join(" | ");
+          output.__issueColumns = new Set(["Remark"]);
+          if (issues.some((item) => item.includes("HSN mismatch"))) {
+            output.__issueColumns.add("HSN Code");
+            output.__issueColumns.add("Our HSN");
+          }
+          if (issues.some((item) => item.includes("EAN mismatch"))) {
+            output.__issueColumns.add("GTIN");
+            output.__issueColumns.add("Our EAN");
+          }
+          if (issues.some((item) => item.includes("NLC with GST mismatch"))) {
+            output.__issueColumns.add("Landing Price");
+            output.__issueColumns.add("Our NLC with GST");
+          }
+        }
+
+        return output;
+      });
+
+      const summaryRows = [
+        ["Metric", "Count"],
+        ["Total rows checked", stats.totalRows],
+        ["Rows found in master", stats.foundInMaster],
+        ["Rows missing in master", stats.missingInMaster],
+        ["Rows missing Ship To", stats.missingShipTo],
+        ["EAN mismatches", stats.eanMismatch],
+        ["HSN mismatches", stats.hsnMismatch],
+        ["NLC with GST mismatches (>1 difference)", stats.nlcMismatch],
+        ["NLC rows within tolerance (-1 to +1)", stats.nlcWithinTolerance],
+        ["Rows fully matched", stats.fullyMatched]
+      ];
+
+      return { combinedRows, summaryRows };
+    }
+
+    function buildOutputWorkbook(combinedRows, masterRows, summaryRows) {
+      const workbook = XLSX.utils.book_new();
+      const finalAoa = [FINAL_HEADERS];
+
+      for (const row of combinedRows) {
+        finalAoa.push(FINAL_HEADERS.map((header) => row[header] ?? ""));
+      }
+
+      const dataSheet = XLSX.utils.aoa_to_sheet(finalAoa);
+      applyMainSheetStyles(dataSheet, combinedRows);
+      dataSheet["!cols"] = mainSheetColumns();
+      dataSheet["!autofilter"] = { ref: `A1:${columnName(FINAL_HEADERS.length)}${finalAoa.length}` };
+
+      const masterSheet = XLSX.utils.aoa_to_sheet(masterRows);
+      masterSheet["!cols"] = [{ wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 12 }];
+
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+      applySummarySheetStyles(summarySheet, summaryRows.length);
+      summarySheet["!cols"] = [{ wch: 36 }, { wch: 14 }];
+
+      XLSX.utils.book_append_sheet(workbook, dataSheet, "Combined PO Output");
+      XLSX.utils.book_append_sheet(workbook, masterSheet, "Master Lookup");
+      XLSX.utils.book_append_sheet(workbook, summarySheet, "Check Summary");
+
+      workbook.Workbook = {
+        Sheets: [
+          { name: "Combined PO Output", Hidden: 0 },
+          { name: "Master Lookup", Hidden: 1 },
+          { name: "Check Summary", Hidden: 0 }
+        ]
+      };
+
+      return workbook;
+    }
+
+    function applyMainSheetStyles(sheet, combinedRows) {
+      const compareSourceHeaders = new Set(["HSN Code", "GTIN", "Landing Price"]);
+      const compareMappedHeaders = new Set(["Our SKU", "Our HSN", "Our EAN", "Our NLC with GST"]);
+
+      FINAL_HEADERS.forEach((header, headerIndex) => {
+        const address = XLSX.utils.encode_cell({ r: 0, c: headerIndex });
+        sheet[address].s = compareSourceHeaders.has(header)
+          ? STYLES.sourceCompareHeader
+          : compareMappedHeaders.has(header)
+            ? STYLES.mappedCompareHeader
+            : STYLES.header;
+      });
+
+      combinedRows.forEach((row, index) => {
+        const excelRow = index + 1;
+        FINAL_HEADERS.forEach((header, headerIndex) => {
+          const address = XLSX.utils.encode_cell({ r: excelRow, c: headerIndex });
+          const cell = sheet[address];
+          if (!cell) {
+            return;
+          }
+
+          const isWrapped = header === "Ship To" || header === "Remark" || header === "Vendor Article Name";
+          const hasIssue = row.__issueColumns?.has(header);
+          const isMissing = row.__missingColumns?.has(header);
+          const isGoodRemark = header === "Remark" && row.__goodRemark;
+
+          if (isMissing) {
+            cell.s = STYLES.missing;
+          } else if (hasIssue) {
+            cell.s = STYLES.issue;
+          } else if (isGoodRemark) {
+            cell.s = STYLES.good;
+          } else {
+            cell.s = isWrapped ? STYLES.wrapCell : STYLES.cell;
+          }
+        });
+      });
+    }
+
+    function applySummarySheetStyles(sheet, rowCount) {
+      for (let r = 0; r < rowCount; r += 1) {
+        for (let c = 0; c < 2; c += 1) {
+          const address = XLSX.utils.encode_cell({ r, c });
+          if (!sheet[address]) {
+            continue;
+          }
+          sheet[address].s = r === 0 ? STYLES.header : STYLES.cell;
+        }
+      }
+    }
+
+    function mainSheetColumns() {
+      return [
+        { wch: 18 },
+        { wch: 58 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 20 },
+        { wch: 16 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 34 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 26 },
+        { wch: 12 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 52 }
+      ];
+    }
+
+    function makeHeaderIndex(row) {
+      const index = {};
+      row.forEach((value, i) => {
+        const key = normalizeText(value);
+        if (key) {
+          index[key] = i;
+        }
+      });
+      return index;
+    }
+
+    function valueOrBlank(row, headerIndex, key) {
+      const idx = headerIndex[key];
+      return idx == null ? "" : (row[idx] ?? "");
+    }
+
+    function hasUsefulValue(value) {
+      return value !== null && value !== undefined && String(value).trim() !== "";
+    }
+
+    function normalizeText(value) {
+      if (value === null || value === undefined) {
+        return "";
+      }
+      const text = String(value).trim();
+      return text.endsWith(".0") ? text.slice(0, -2) : text;
+    }
+
+    function normalizeNumericText(value) {
+      const text = normalizeText(value);
+      if (!text) {
+        return "";
+      }
+      const compact = text.replace(/\s+/g, "");
+      if (/^-?\d+(\.\d+)?$/.test(compact)) {
+        return String(Math.trunc(Number(compact)));
+      }
+      return compact;
+    }
+
+    function normalizeCompareDigits(value) {
+      const text = normalizeText(value);
+      if (!text) {
+        return "";
+      }
+      const digits = text.replace(/[^\d]/g, "");
+      return digits.replace(/^0+/, "") || digits;
+    }
+
+    function normalizeNumber(value) {
+      if (value === null || value === undefined || value === "") {
+        return null;
+      }
+      const num = Number(value);
+      return Number.isFinite(num) ? Math.round(num * 100) / 100 : null;
+    }
+
+    function displayValue(value) {
+      return value === null || value === undefined || value === "" ? "blank" : String(value);
+    }
+
+    function columnName(index) {
+      let value = index;
+      let name = "";
+      while (value > 0) {
+        const rem = (value - 1) % 26;
+        name = String.fromCharCode(65 + rem) + name;
+        value = Math.floor((value - 1) / 26);
+      }
+      return name;
+    }
+
+    function timestampForFile() {
+      const now = new Date();
+      const pad = (value) => String(value).padStart(2, "0");
+      return [
+        now.getFullYear(),
+        pad(now.getMonth() + 1),
+        pad(now.getDate()),
+        "_",
+        pad(now.getHours()),
+        pad(now.getMinutes())
+      ].join("");
+    }
+  </script>
+</body>
+</html>
